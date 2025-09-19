@@ -308,6 +308,7 @@ resolveTName pos name = do
                 -- stio Nothing
 
 
+defaultXName :: Position -> QName -> SName -> StG QName
 defaultXName pos qname name = do            -- qname MUST resolve to something
         g <- getST
         it <- resolveTName pos name
@@ -323,11 +324,13 @@ defaultXName pos qname name = do            -- qname MUST resolve to something
                     stio it
 
 
+resolveXName :: Position -> Symbol -> SName -> StG (Maybe QName)
 resolveXName pos sym name = do
         it <- resolveTName pos name
         maybe (stio Nothing) (checkXName pos sym) it
 
 
+checkXName :: Position -> Symbol -> QName -> StG (Maybe QName)
 checkXName pos sym name = do
         g <- getST
         case g.findit name of
