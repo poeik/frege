@@ -116,26 +116,11 @@ deriveInst d = do
 --- List of derivable classes
 --- Note that special classes like 'Exceptional' and 'JavaType' are not listed here.
 --- This controls also whether type variables in the instance type must have the same class membership.
-derivable = ["Hashable", "Eq", "Ord", "Enum", "Bounded", "Show", "Exceptional", "FromJSON"]
+derivable = ["Hashable", "Eq", "Ord", "Enum", "Bounded", "Show", "Exceptional", "FromJSON", "ToJSON"]
 
 --- arity of a constructor
 arity ∷ Symbol → Int
 arity sym = length (Symbol.flds sym)
-import frege.compiler.types.ImportDetails
-
-derive Show CAltS
-derive Show CKind
-derive Show ExprS
-derive Show ImportItem
-derive Show ImportList
-derive Show s => Show (ConField s)
-derive Show DCon
-derive Show DefinitionS
-derive Show s => Show (SigmaT s)
-derive Show s => Show (MetaTvT s)
-derive Show s => Show (TauT s)
-derive Show s => Show (RhoT s)
-derive Show s => Show (ContextT s)
 
 deriveClass :: Position → QName → Symbol → [Symbol] → RhoT SName -> Global → String → [DefinitionS]
 deriveClass pos clas forty ctrs instrho g toderive = deriveClass toderive
@@ -201,6 +186,7 @@ deriveClass pos clas forty ctrs instrho g toderive = deriveClass toderive
         -- lists
         consCon = Con {name = consName}
         nilCon  = Con {name = nilName}
+        cons a b = nApp (nApp consCon a) b
         singleton x = nApp (nApp consCon x) nilCon 
         -- misc constructors and vars
         !vEq = Con  {name=eqName}
@@ -245,9 +231,52 @@ deriveClass pos clas forty ctrs instrho g toderive = deriveClass toderive
                     hs = map (nApp opHash) vs
                     hfun a b = mkop (mkop (int 31) opMul a) opAdd b
                     hashex = fold hfun (int 1) (c:hs)  
+        -- say if there is a constructor field without a name
+        isPositionalCtor = any (\f -> f.name == Nothing)
 
         -- derive Hashable
         deriveClass "Hashable" = [publicfun "hashCode" [parg1] hash]
+        -- derive ToJSON
+        deriveClass "ToJSON"   = [publicfun "toJSON"   [parg1] toJson] where
+          toJson = Case CNormal varg1 (ctrCaseAlts ctrs)
+          ctrCaseAlts (c:[]) = [toJSONForCtr c []] where 
+          ctrCaseAlts ctrs = map (\c -> toJSONForCtr c [addCase c]) ctrs where
+            -- adds the required `case` field if the data type has multiple ctors
+            addCase c = nApp (nApp vtcon (string "case")) (nApp toJSON (string c.name.base))
+          toJSONForCtr :: Symbol -> [ExprS] -> CAltS
+          toJSONForCtr (ctr@(SymD{flds, name, typ})) staticFields = 
+            calt (matchOnFields flds) (serializeCtorFields flds staticFields) where
+            matchOnFields flds = fields flds where
+              fields []     = Con { name = ctrSName ctr}
+              fields (a:as) = nApp (fields as) (varName as)
+              -- We match on each field of the ctor and use the names f0 .. fn 
+              -- to access the fields later on
+              varName = var . ((++) "f") . show . length
+              ctrSName ctr = Simple pos.first.{tokid=CONID, value = ctr.name.base}
+            struct = gvar "JSON" "Struct"
+            array  = gvar "JSON" "Array"
+            serializeCtorFields flds staticFields = nApp struct $ 
+              foldr toAstList (serializeCtorFields' flds) staticFields where
+                serializeCtorFields' flds 
+                  | isPositionalCtor flds -> serializeNonRecord flds 
+                  | otherwise             -> serializeRecord flds
+                toAstList = nApp . nApp consCon
+            serializeNonRecord flds = singleton (nApp (nApp vtcon (string name.base)) (nApp array fieldArray))
+            fieldArray = go 0 where
+              go nr | nr == (length flds) = nilCon
+                    | otherwise = cons (nApp toJSON (varName nr)) (go (nr + 1))
+            serializeRecord = go 0 where
+              go _ []  = nilCon
+              go nr (f:fs) = cons (tpl f (varName nr)) (go (nr + 1) fs)
+            -- the number lets us access the single fields we previously matched on
+            varName nr = var $ "f" ++ show nr
+            tpl f variable =  nApp (nApp vtcon (string (fieldName f))) (nApp toJSON variable)
+            fieldName :: ConField QName -> String
+            fieldName f = case f.name of
+              Nothing     -> error "Illegal state: at this position we already know that every field has a name"
+              (Just name) -> name
+          toJSONForCtr noCtor _ = error "Illegal state: At this position it can only be a ctor"
+          toJSON = gvar "JSON" "toJSON"
         -- derive FromJSON
         deriveClass "FromJSON" = [publicfun "fromJSON" [parg1] fromJson] where
           fromJson = if length ctrs == 1 then singleCtor (head ctrs) else multipleCtors
@@ -271,7 +300,7 @@ deriveClass pos clas forty ctrs instrho g toderive = deriveClass toderive
           -- if there is a field without a name we are working with a ctr which 
           -- does not use record syntax, thus we need to handle the JSON differently
           exprFields fields ctr = 
-            if (any (\f -> f.name == Nothing) fields) then 
+            if isPositionalCtor fields then 
               handleNonRecord (length fields) ctr
             else
               handleRecord fields ctr 
@@ -562,5 +591,5 @@ deriveDcls pos clas forty ctrs instrho = do
         TName ppp ccc | ccc `elem` derivable = stio (dC ccc)
         _ -> do
             E.error pos (msgdoc ("Can't derive " ++ clas.nice g
-                ++ ", only Prelude classes Eq, Ord, Enum, Bounded and Show may be derived."))
+                ++ ", only Eq, Ord, Enum, Bounded, Show, FromJSON and ToJSON may be derived."))
             stio []
