@@ -232,7 +232,9 @@ deriveClass pos clas forty ctrs instrho g toderive = deriveClass toderive
                     hfun a b = mkop (mkop (int 31) opMul a) opAdd b
                     hashex = fold hfun (int 1) (c:hs)  
         -- say if there is a constructor field without a name
-        isPositionalCtor = any (\f -> f.name == Nothing)
+        isPositionalCtor n
+          | length n == 0 -> True
+          | otherwise     ->  any (\f -> f.name == Nothing) n
 
         -- derive Hashable
         deriveClass "Hashable" = [publicfun "hashCode" [parg1] hash]
@@ -261,10 +263,12 @@ deriveClass pos clas forty ctrs instrho g toderive = deriveClass toderive
                   | isPositionalCtor flds -> serializeNonRecord flds 
                   | otherwise             -> serializeRecord flds
                 toAstList = nApp . nApp consCon
-            serializeNonRecord flds = singleton (nApp (nApp vtcon (string name.base)) (nApp array fieldArray))
-            fieldArray = go 0 where
-              go nr | nr == (length flds) = nilCon
-                    | otherwise = cons (nApp toJSON (varName nr)) (go (nr + 1))
+            serializeNonRecord flds = singleton (nApp (nApp vtcon (string name.base)) (fields (length flds))) where
+              fields 0 = gvar "JSON" "Null" -- ctor with no fields must be serialized as `null`
+              fields _ = nApp array fieldArray
+              fieldArray = go 0 where
+                go nr | nr == (length flds) = nilCon
+                      | otherwise = cons (nApp toJSON (varName nr)) (go (nr + 1))
             serializeRecord = go 0 where
               go _ []  = nilCon
               go nr (f:fs) = cons (tpl f (varName nr)) (go (nr + 1) fs)
@@ -304,6 +308,7 @@ deriveClass pos clas forty ctrs instrho g toderive = deriveClass toderive
               handleNonRecord (length fields) ctr
             else
               handleRecord fields ctr 
+          handleNonRecord 0 ctr = nApp pure' (con ctr) -- Infx fmap.name (con ctr) (requiredField (string ctr.name.key))
           handleNonRecord 1 ctr = Infx fmap.name (con ctr) (requiredField (string ctr.name.key))
           handleNonRecord n ctr = Infx flatMap.name (requiredField (string ctr.name.key)) (lam parg2 (handleArr n ctr)) 
             where
@@ -390,6 +395,7 @@ deriveClass pos clas forty ctrs instrho g toderive = deriveClass toderive
           tail' = gvar "PreludeList" "tail"
           flatMap = gvar2 "PreludeMonad" "Bind" ">>="
           fmap = gvar "PreludeMonad" "<$>"
+          pure' = gvar "PreludeMonad" "pure"
           app = gvar2 "PreludeMonad" "Apply" "<*>"
           matchStruct = nApp Con { name=structSName } (var "as") 
           structSName = With1 pos.first.{tokid=CONID, value="JSON"} pos.first.{tokid=CONID, value="Struct"}

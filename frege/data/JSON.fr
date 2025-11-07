@@ -914,7 +914,7 @@ instance (FromJSON e) ⇒ FromJSON (Maybe e)  where
     -}
     fromJSON (Struct m)
         | Just v <- lookup "Just"     m = Just <$> fromJSON v
-        | Just _ <- lookup "Nothing"  m = return Nothing
+        | Just a <- lookup "Nothing"  m = return Nothing
     fromJSON Value.Null                 = return Nothing
     fromJSON v                          = Just <$> fromJSON v
 
