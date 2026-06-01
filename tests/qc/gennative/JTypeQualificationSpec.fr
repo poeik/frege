@@ -1,8 +1,9 @@
 module tests.qc.gennative.JTypeQualificationSpec where
 
+import Compiler.classes.HasClassLoader(HasClassLoader)
 import Compiler.common.CompilerOptions(standardGlobal)
 import Compiler.common.SymbolTable(enter)
-import Compiler.types.Global(Global)
+import Compiler.types.Global(Global, HasGlobalState(getST))
 import Compiler.types.Packs(Pack)
 import Compiler.types.Positions(Position)
 import Compiler.types.QNames(VName, TName)
@@ -28,12 +29,13 @@ p_ShouldQualifySpecialTypes = once $ let
 p_ShouldQualifyNonExistingSingleNative :: Property
 p_ShouldQualifyNonExistingSingleNative = once $ do
   pack <- fmap Pack.new $ arbitrary
-  let g = compileGlobal.{ sub <- (_.{ thisPack = pack }) }
+  let g = compileGlobal.{ sub <- (_.{ thisPack = pack}), javaEnv = TreeMap.empty }
   let ntv = NativeName "simple.Name" []
   let (q, g') = (run ((qualifySingleNative emptyJMethod) ntv) g)
+  let env = g'.javaEnv.lookupS ntv.fqn
   pure $
-    q.name == (TName pack ntv.fqn) &&
-    contains g'.javaEnv ntv.fqn
+    q.name ==? (TName pack ntv.fqn) .&&.
+    fmap fst env ==? Just ["java.lang.Object"]
 
 p_shouldFindExistingNative :: Property
 p_shouldFindExistingNative = once $ do
@@ -130,6 +132,27 @@ instance Arbitrary NativeName where
     params <- choose (0,1) >>= flip vectorOf arbitrary -- using more params makes the tests too slow
     f      <- fqn
     pure (NativeName f params)
+
+
+{--
+This is a dummy instance for testing purposes only.
+-}
+instance HasClassLoader (State Global) where
+  loadClass name = 
+    -- we always return our example class here
+    pure $ Right exampleClass
+  findInterfaces clazz = pure []
+  {--
+  We simply return java.lang.Object as super type
+  -}
+  -- Break endless recursion
+  findSuperclass clazz | clazz.getName == "java.lang.Object" = pure Nothing
+  findSuperclass _ = 
+    pure $ Just objectClass
+  forName name _ = loadClass name
+
+pure native objectClass "java.lang.Object.class" :: Class a
+pure native exampleClass "tests.qc.gennative.ExampleClass.class" :: Class a
 
 {-- 
 nowarn: performUnsafe

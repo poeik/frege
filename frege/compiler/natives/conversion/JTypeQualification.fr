@@ -1,25 +1,26 @@
 module Compiler.natives.conversion.JTypeQualification where
 
-import Compiler.types.Global(StIO, getSTT)
+import Compiler.classes.HasClassLoader(HasClassLoader)
 
-import Data.TreeMap as TM()
-import Compiler.types.Symbols
-import Compiler.types.Global
-import Compiler.types.Positions
-import Compiler.common.SymbolTable(changeSym, enter)
-import Compiler.types.QNames
-import Compiler.types.Types
+import Compiler.common.SymbolTable(enter)
 import Compiler.enums.Visibility
-import Compiler.types.Packs
-import Compiler.Utilities(nativeType)
+import Compiler.Javatypes(findAllSupers)
 import Compiler.natives.types.JTypes
-import Data.Traversable(traverse)
 import Compiler.natives.conversion.SigmaConversion(runJReader, bindTypeParam, JEnv)
+import Compiler.types.Symbols
+import Compiler.types.Global(HasGlobalState, liftGlobalState, Global, Symbol)
+import Compiler.types.Types
+import Compiler.types.Packs(Pack, pPreludeBase, pPreludeArrays)
+import Compiler.types.QNames
+import Compiler.types.Positions(Position)
+import Compiler.Utilities(nativeType)
 
-qualify :: HasGlobalState m => JMethodT NativeName -> m QualifiedJMethod
+import Data.Traversable(traverse)
+
+qualify :: (HasClassLoader m, HasGlobalState m) => JMethodT NativeName -> m QualifiedJMethod
 qualify jmethod = traverse (qualifySingleNative jmethod) jmethod
 
-qualifySingleNative :: HasGlobalState m => JMethodT NativeName -> NativeName -> m QualifiedName
+qualifySingleNative :: (HasClassLoader m, HasGlobalState m) => JMethodT NativeName -> NativeName -> m QualifiedName
 qualifySingleNative _ Array = 
   pure $ QualifiedName (TName pPreludeArrays "JArray") EnvS
 qualifySingleNative jmethod (NativeName fqn typeParams)
@@ -41,6 +42,7 @@ qualifySingleNative jmethod (NativeName fqn typeParams)
           symbol <- nativeSym Position.null (fqn, typeParams) pack jmethod
           liftGlobalState $ enter symbol
           nativeType fqn symbol.name
+          findAllSupers fqn
           pure $ QualifiedName symbol.name (if symbol.pur then (Pure Nothing) else EnvS)
         Just s -> pure s
 
@@ -64,7 +66,7 @@ envFromSym sym = case sym.stateIdx of
                    Nothing -> EnvS
                    (Just idx) -> Env idx
 
-nativeSym :: HasGlobalState m => Position -> (String, [JVarT NativeName]) -> Pack -> JMethodT NativeName -> m Symbol
+nativeSym :: (HasClassLoader m, HasGlobalState m ) => Position -> (String, [JVarT NativeName]) -> Pack -> JMethodT NativeName -> m Symbol
 nativeSym pos (fqn, typeParams) pack jmethod = do
                     qualified <- traverse (traverse (qualifySingleNative jmethod)) typeParams
                     let resolved  = map (\a -> fmap resolve a) qualified
