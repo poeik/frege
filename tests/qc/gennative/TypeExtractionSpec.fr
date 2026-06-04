@@ -19,16 +19,16 @@ p_ShouldConvertMethodToJMethod = withExampleClass $ \clazz ->
       , memberType ==? InstanceMethod
       ] where 
         assertParam jtype = case jtype.typeRef.fqn of
-          "tests.qc.gennative.ExampleClass" -> jtype.typeArgs.head.ref ==? "T"
-          "java.util.List"                  -> jtype.typeArgs.head.ref ==? "E"
+          "tests.qc.gennative.ExampleClass" -> jtype.typeArgs.head.ref ==? "t"
+          "java.util.List"                  -> jtype.typeArgs.head.ref ==? "e"
           _                                 -> property False
         assertVar var = case var.name of
-          "E" -> 
+          "e" -> 
               number.typeRef.fqn ==? "java.lang.Number"
              where number = var.bounds.head
-          "T" -> conjoin [ 
+          "t" -> conjoin [ 
               comparable.typeRef.fqn ==? "java.lang.Comparable"
-            , comparable.typeRef.typeParams.head.name ==? "T"
+            , comparable.typeRef.typeParams.head.name ==? "t"
             ] where comparable = var.bounds.head
           otherwise -> property False
         assertExs ex = ex.typeRef.fqn ==? "java.lang.Exception"
@@ -49,9 +49,9 @@ p_ShouldConvertMethodWithRawTypeToJMethod = withExampleClass $ \clazz ->
       , memberType ==? InstanceMethod
       ] where 
         assertVar var = case var.name of
-          "T" -> conjoin [ 
+          "t" -> conjoin [ 
               comparable.typeRef.fqn ==? "java.lang.Comparable"
-            , comparable.typeRef.typeParams.head.name ==? "T"
+            , comparable.typeRef.typeParams.head.name ==? "t"
             ] where comparable = var.bounds.head
           otherwise -> property False
 
@@ -78,12 +78,12 @@ p_ShouldConvertCtorToJMethod = withExampleClass $ \clazz ->
       , conjoin (map assertExs exs)
       , memberType ==? InstanceMethod
       ] where 
-        assertParam (JVarRef "T") = property True
+        assertParam (JVarRef "t") = property True
         assertParam _             = property False
         assertVar var = case var.name of
-          "T" -> conjoin [ 
+          "t" -> conjoin [ 
               comparable.typeRef.fqn ==? "java.lang.Comparable"
-            , comparable.typeRef.typeParams.head.name ==? "T"
+            , comparable.typeRef.typeParams.head.name ==? "t"
             ] where comparable = var.bounds.head
           otherwise -> property False
         assertExs ex = ex.typeRef.fqn ==? "java.lang.Exception"
@@ -117,9 +117,9 @@ p_ShouldConvertInstanceFieldToJMethod = withExampleClass $ \clazz ->
       , memberType    ==? InstanceField
       ]  where
         assertVar var = case var.name of
-          "T" -> conjoin [ 
+          "t" -> conjoin [ 
               comparable.typeRef.fqn ==? "java.lang.Comparable"
-            , comparable.typeRef.typeParams.head.name ==? "T"
+            , comparable.typeRef.typeParams.head.name ==? "t"
             ] where comparable = var.bounds.head
           otherwise -> property False
 

@@ -17,11 +17,11 @@ p_ShouldConvertClassWithFBoundToJType = withExampleClass $ \clazz ->
     in conjoin [
         jType.typeRef.fqn              ==? "tests.qc.gennative.ExampleClass"
       , length typeArgs                ==? length typeParams
-      , (head typeParams).name         ==? "T"
+      , (head typeParams).name         ==? "t"
       -- type bounds
       , typeParamBound.typeRef.fqn     ==? "java.lang.Comparable"
       , length typeParamBound.typeArgs ==? length typeParamBound.typeRef.typeParams
-      , head typeParamBound.typeArgs   ==? JVarRef "T"
+      , head typeParamBound.typeArgs   ==? JVarRef "t"
       ]
 
 p_ShouldConvertArrayToJType :: Property
@@ -46,7 +46,7 @@ p_ShouldConvertWildcardTypeToJType = withExampleMethod "getWildcardList" $ \meth
     in conjoin [
         jType.typeRef.fqn                 ==? "java.util.List"
       , length typeArgs                   ==? length typeParams
-      , (head typeParams).name            ==? "E"
+      , (head typeParams).name            ==? "e"
       , (head wildcardBounds).typeRef.fqn ==? "java.lang.Number"
       ]
   
@@ -60,7 +60,7 @@ p_ShouldConvertRawTypeToJType = withExampleMethod "getRawList" $ \method ->
     in conjoin [
         jType.typeRef.fqn           ==? "java.util.List"
       , length typeArgs             ==? length typeParams
-      , (head typeParams).name      ==? "E"
+      , (head typeParams).name      ==? "e"
       , (head typeArgs).typeRef.fqn ==? "java.lang.Object"
       ]
 
@@ -70,7 +70,7 @@ p_ShouldConvertTypeVariableToJType = withExampleMethod "setValue" $ \method ->
     let 
       jType = toJType $ head method.getGenericParameterTypes.toList
     in 
-      jType.ref ==? "T"
+      jType.ref ==? "t"
 
 p_ShouldConvertParameterizedTypeToJType :: Property
 p_ShouldConvertParameterizedTypeToJType = withExampleMethod "processParameterizedType" $ \method ->
@@ -83,7 +83,7 @@ p_ShouldConvertParameterizedTypeToJType = withExampleMethod "processParameterize
         jType.typeRef.fqn ==? "java.util.List"
       , length typeArgs   ==? length typeParams
       -- bounds are not part of the jtype but of the jmethod which defines E
-      , typeArgs.head.ref ==? "E"
+      , typeArgs.head.ref ==? "e"
       ]
 
 p_ShouldConvertPrimitiveTypesToJType :: Property
@@ -110,7 +110,7 @@ p_ShouldConvertGenericArrayTypeToJType = withExampleMethod "getArrayOfLists" $ \
     in conjoin [
         jType.typeRef                 ==? Array 
       , componentArgs.typeRef.fqn     ==? "java.util.List"
-      , compTypeParams.head.name      ==? "E"
+      , compTypeParams.head.name      ==? "e"
       , compTypeParams.length         ==? compTypeArgs.length
       , compTypeArgs.head.typeRef.fqn ==? "java.lang.String"
       ]
