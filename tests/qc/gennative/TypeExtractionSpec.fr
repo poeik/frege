@@ -126,21 +126,13 @@ p_ShouldConvertInstanceFieldToJMethod = withExampleClass $ \clazz ->
 {--
 Gives us access to the example class
 -}
-withExampleClass :: Testable t => (Class a -> t) -> Property
-withExampleClass test  = 
-  morallyDubiousIOProperty $ do
-    let exampleClassFqn = "tests.qc.gennative.ExampleClass"
-    g             <- standardGlobal
-    loadedClass   <- g.sub.loader.loadClass exampleClassFqn
-    pure $ case loadedClass of
-      (Left ex)     -> printTestCase 
-                        ("Couldn't load class: " ++ exampleClassFqn ++ " required by a test case. Is it on the classpath?")
-                        False
-      (Right clazz) -> property $ test clazz
+withExampleClass :: Testable t => (Class ExampleClass -> t) -> Property
+withExampleClass test = property $ test ExampleClass.getClass
 
 {--
 nowarn: unused
 We reference this class using reflection and add here an explicit dependency
 for it to be on the classpath.
 -}
-data ExampleClass = native tests.qc.gennative.ExampleClass
+data ExampleClass = native tests.qc.gennative.ExampleClass where
+  pure native getClass "tests.qc.gennative.ExampleClass.class" :: Class ExampleClass
