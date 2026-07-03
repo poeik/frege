@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <groupId>org.frege-lang</groupId>
+  <artifactId>frege</artifactId>
+  <version>@VERSION@</version>
+  <packaging>jar</packaging>
+
+  <name>Frege</name>
+  <description>Frege is a Haskell for the JVM. It brings purely functional programming to the Java platform.</description>
+  <url>https://github.com/Frege/frege</url>
+
+  <licenses>
+    <license>
+      <name>The Frege License</name>
+      <url>https://github.com/Frege/frege/blob/master/LICENSE.txt</url>
+      <distribution>repo</distribution>
+    </license>
+  </licenses>
+
+  <developers>
+    <developer>
+      <id>Ingo60</id>
+      <name>Ingo Wechsung</name>
+      <url>https://github.com/Ingo60</url>
+    </developer>
+    <developer>
+      <id>Dierk</id>
+      <name>Dierk König</name>
+      <url>https://github.com/Dierk</url>
+    </developer>
+    <developer>
+      <id>mmhelloworld</id>
+      <name>Marimuthu Madasamy</name>
+      <url>https://github.com/mmhelloworld</url>
+    </developer>
+    <developer>
+      <id>poeik</id>
+      <name>Tobias Wyss</name>
+      <url>https://github.com/poeik</url>
+    </developer>
+  </developers>
+
+  <scm>
+    <connection>scm:git:https://github.com/Frege/frege.git</connection>
+    <developerConnection>scm:git:ssh://git@github.com/Frege/frege.git</developerConnection>
+    <url>https://github.com/Frege/frege</url>
+  </scm>
+
+</project>
+

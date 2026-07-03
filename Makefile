@@ -91,6 +91,8 @@ JLINE=lib/jline-2.14.6.jar
 #	shadow Prelude files in the order they must be compiled
 SPRELUDE  = $(addprefix shadow/, $(PRELUDE))
 
+include bundle-target.mk
+
 .PHONY: all clean diffs dist distclean docu fetch-fregec.jar rebuild runtime sanitycheck savejava shadow-prelude test tools
 
 all: runtime compiler fregec.jar
