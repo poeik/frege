@@ -55,6 +55,22 @@ p_shouldGeneratenativeDeclaration = withExampleClass $ \clazz -> once $ let
          -- all symbols must be part of the symbol table
     .&&. mapM (g'.find . SymbolT.name) result != Nothing
 
+p_ShouldStateErrorWhenGeneratingInexistingMethod :: Property
+p_ShouldStateErrorWhenGeneratingInexistingMethod = withExampleClass $ \clazz -> once $ let
+    g               = compileGlobal
+    parentName      = TName g.thisPack "ExampleClass"
+    memberName      = "iDoNotExist" 
+    exampleClassSym = mkSymT parentName
+    testCase = do
+      enter exampleClassSym
+      changeST _.{javaEnv = (TreeMap.fromList [("tests.qc.gennative.ExampleClass", ([], [parentName]))])}
+      let props = NativeMethodProps memberName parentName pos False
+      generateNativeDeclaration props clazz
+    (result, g') = run testCase g
+  in
+     length result ==? 0
+     .&&. g'.sub.numErrors > 0
+
 ---- cleanupPlaceholderSymbols spec
 
 p_shouldCleanupPlaceholderSymbols :: Property

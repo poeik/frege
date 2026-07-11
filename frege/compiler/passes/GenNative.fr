@@ -80,6 +80,8 @@ generateNativeDeclaration props clazz = do
       Left err ->  do
         E.error props.pos err
         pure []
+      Right [] -> -- We could not find a public member with the given name
+        pure []   -- error is reported later
       Right methods -> do
           let typedMethods = map (\(e, m) -> (toSigma props.pos e m, m.memberType)) methods
           let methodSyms   = map (\(typ, jmethod) -> createMethodSym typ jmethod g) typedMethods

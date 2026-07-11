@@ -2,11 +2,9 @@ module Compiler.natives.conversion.JTypeConversion where
 
 import Compiler.natives.types.JTypes(
     JType
-  , JMethod
   , JVarT(JVar)
   , JTypeT(JType, JVarRef, JWildcard)
   , WildcardBounds(Lower, Upper)
-  , JMethodT(JMethod)
   , NativeName(NativeName, Array)
   , Env(Pure, EnvS)
   )
@@ -39,10 +37,10 @@ toJType typ
               genericArrayTypeToJType $ typ `asInstanceOf` GenericArrayType.classRef
 
 typeVariableToJType :: TypeVariable -> JTypeT NativeName
-typeVariableToJType typ = JVarRef typ.getName
+typeVariableToJType typ = JVarRef typ.getName.toLowerCase
 
 typeParamToJVar :: TypeVariable -> JVarT NativeName
-typeParamToJVar typ = JVar typ.getName bounds
+typeParamToJVar typ = JVar typ.getName.toLowerCase bounds
   where 
     bounds = map toJType typ.getBounds.toList
 

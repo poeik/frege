@@ -24,7 +24,7 @@ qualifySingleNative :: (HasClassLoader m, HasGlobalState m) => JMethodT NativeNa
 qualifySingleNative _ Array = 
   pure $ QualifiedName (TName pPreludeArrays "JArray") EnvS
 qualifySingleNative jmethod (NativeName fqn typeParams)
-  | fqn == "void" = 
+  | fqn == "void" || fqn == "java.lang.Void" = 
       pure $ QualifiedName.pureName (TName pPreludeBase "()")
   -- make sure we use the Frege String type alias
   | fqn == "java.lang.String" = 
